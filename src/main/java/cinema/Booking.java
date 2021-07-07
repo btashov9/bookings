@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 public class Booking {
 
-    public static final int MAX_SEATS = 5;
     public static final int NUM_SEATS = 50;
     public static final int NUM_ROWS = 100;
+    public static final int OVER_LIMIT_SEATS = 6;
 
     public static boolean[][] CINEMA = new boolean[NUM_ROWS][NUM_SEATS];
 
@@ -28,58 +28,41 @@ public class Booking {
     }
 
     private List<Request> processBookings() {
-
         Path path = Paths.get("src/main/resources/sample_booking_requests");
         List<Request> requests = new LinkedList<>();
         try {
+            for (String line : Files.readAllLines(path)) {
 
-            List<String> contents = Files.readAllLines(path);
-            for (String ticket : contents) {
-                String[] bookingArray = ticket.replaceAll("\\(", "").split("\\W");
-
-                List<Integer> bookingList = Arrays.stream(bookingArray)
+                List<Integer> bookingLine = Arrays.stream(line.replaceAll("\\(", "").split("\\W"))
                         .map(Integer::valueOf)
                         .collect(Collectors.toList());
 
-
                 Request req = Request.builder()
-                        .id(bookingList.get(0))
-                        .firstRow(bookingList.get(1))
-                        .firstPlace(bookingList.get(2))
-                        .lastRow(bookingList.get(3))
-                        .lastPlace(bookingList.get(4))
+                        .id(bookingLine.get(0))
+                        .firstRow(bookingLine.get(1))
+                        .firstPlace(bookingLine.get(2))
+                        .lastRow(bookingLine.get(3))
+                        .lastPlace(bookingLine.get(4))
                         .isOk(true)
                         .build();
 
-                if (req.getFirstRow() > NUM_ROWS
-                        || req.getFirstPlace() > NUM_SEATS
-                        || req.getLastRow() > NUM_ROWS
-                        || req.getLastPlace() > NUM_SEATS) {
+                if (isPlaceInCinemaRange(req)) {
                     req.setOk(false);
                 } else {
-                    if (req.getFirstRow() != req.getLastRow()) {
+                    if (isAnotherRow(req)) {
                         req.setOk(false);
                     } else {
-                        if ((req.getLastPlace() - req.getFirstPlace()) > MAX_SEATS) {
+                        if (isOverLimit(req)) {
                             req.setOk(false);
                         } else {
-                            if (CINEMA[req.getFirstRow()][req.getFirstPlace()]
-                                    || CINEMA[req.getLastRow()][req.getLastPlace()]
-                            ) {
+                            if (isOccupiedPlace(req)) {
                                 req.setOk(false);
                             }
 
-                            if (req.isOk()) {
-                                int size = req.getLastPlace() - req.getFirstPlace();
-                                for (int i = 0; i <= size; i++) {
-                                    CINEMA[req.getFirstRow()][req.getFirstPlace() + i] = true;
-                                }
-                            }
+                            provideSeat(req);
                         }
                     }
                 }
-
-
                 requests.add(req);
 
             }
@@ -89,5 +72,35 @@ public class Booking {
         return requests;
 
     }
+
+    private boolean isOverLimit(Request req) {
+        return (req.getLastPlace() - req.getFirstPlace()+1) >= OVER_LIMIT_SEATS;
+    }
+
+    private boolean isAnotherRow(Request req) {
+        return req.getFirstRow() != req.getLastRow();
+    }
+
+    private boolean isPlaceInCinemaRange(Request req) {
+        return req.getFirstRow() > NUM_ROWS
+                || req.getFirstPlace() > NUM_SEATS
+                || req.getLastRow() > NUM_ROWS
+                || req.getLastPlace() > NUM_SEATS;
+    }
+
+    private void provideSeat(Request req) {
+        if (req.isOk()) {
+            int size = req.getLastPlace() - req.getFirstPlace();
+            for (int i = 0; i <= size; i++) {
+                CINEMA[req.getFirstRow()][req.getFirstPlace() + i] = true;
+            }
+        }
+    }
+
+    private boolean isOccupiedPlace(Request req) {
+        return CINEMA[req.getFirstRow()][req.getFirstPlace()] || CINEMA[req.getLastRow()][req.getLastPlace()];
+    }
+
+
 
 }
