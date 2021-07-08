@@ -23,7 +23,7 @@ public class Booking {
         new Booking().processBookings()
                 .stream()
                 .filter(x -> !x.isOk())
-                .forEach(e -> System.out.println("Booking request id: "+e.getId()));
+                .forEach(e -> System.out.println("Booking request id: " + e.getId()));
 
     }
 
@@ -49,7 +49,7 @@ public class Booking {
                 if (isPlaceInCinemaRange(req) || isAnotherRow(req) || isOverLimit(req)) {
                     req.setOk(false);
                 } else {
-                    if (isOccupiedPlace(req)) {
+                    if (isOccupiedPlace(req) || isOnePlaceGap(req)) {
                         req.setOk(false);
                     }
                     provideSeat(req);
@@ -65,7 +65,7 @@ public class Booking {
     }
 
     private boolean isOverLimit(Request req) {
-        return (req.getLastPlace() - req.getFirstPlace()+1) >= OVER_LIMIT_SEATS;
+        return (req.getLastPlace() - req.getFirstPlace() + 1) >= OVER_LIMIT_SEATS;
     }
 
     private boolean isAnotherRow(Request req) {
@@ -92,6 +92,24 @@ public class Booking {
         return CINEMA[req.getFirstRow()][req.getFirstPlace()] || CINEMA[req.getLastRow()][req.getLastPlace()];
     }
 
+    private boolean isOnePlaceGap(Request req) {
+        if (req.getFirstPlace() > 1
+                && !CINEMA[req.getFirstRow()][req.getFirstPlace() - 1]
+                && CINEMA[req.getFirstRow()][req.getFirstPlace() - 2]) {
+            return true;
+        }
+
+        if ((req.getFirstPlace() == 1
+                && !CINEMA[req.getFirstRow()][0])
+                || (req.getLastPlace() == NUM_SEATS - 2 && !CINEMA[req.getFirstRow()][NUM_SEATS - 1])) {
+            return true;
+        }
+        return req.getLastPlace() < NUM_SEATS - 2
+                && !CINEMA[req.getFirstRow()][req.getLastPlace() + 1]
+                && CINEMA[req.getFirstRow()][req.getLastPlace() + 2];
+
+
+    }
 
 
 }
