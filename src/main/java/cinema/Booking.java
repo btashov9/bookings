@@ -46,22 +46,13 @@ public class Booking {
                         .isOk(true)
                         .build();
 
-                if (isPlaceInCinemaRange(req)) {
+                if (isPlaceInCinemaRange(req) || isAnotherRow(req) || isOverLimit(req)) {
                     req.setOk(false);
                 } else {
-                    if (isAnotherRow(req)) {
+                    if (isOccupiedPlace(req)) {
                         req.setOk(false);
-                    } else {
-                        if (isOverLimit(req)) {
-                            req.setOk(false);
-                        } else {
-                            if (isOccupiedPlace(req)) {
-                                req.setOk(false);
-                            }
-
-                            provideSeat(req);
-                        }
                     }
+                    provideSeat(req);
                 }
                 requests.add(req);
 
@@ -92,7 +83,7 @@ public class Booking {
         if (req.isOk()) {
             int size = req.getLastPlace() - req.getFirstPlace();
             for (int i = 0; i <= size; i++) {
-                CINEMA[req.getFirstRow()][req.getFirstPlace() + i] = true;
+                CINEMA[req.getFirstRow()][req.getFirstPlace() + i] = true;  //todo check
             }
         }
     }
